@@ -20,7 +20,7 @@ void read_buf_and_print(int sd, char* bp, int bytes_to_read) {
 	printf("%s",temp);
 }
 
-//221.146.135.36
+// public IP: 221.146.135.36  WSL: 172.17.144.1
 
 // recv data size
 int recv_data[14] = {10, 214, 12, 65, 12, 83, 12, 106, 12, 85, 12, 148, 13, 189};
