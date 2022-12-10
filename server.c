@@ -9,7 +9,8 @@
 
 #define BUFLEN 512
 
-const char ipaddr[] = "127.0.0.1";
+const char ipaddr[] = "0.0.0.0";
+//const char ipaddr[] = "127.31.117.199";
 
 int main(int argc, char **argv) {
 	int bytes_to_read;
@@ -44,8 +45,9 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	listen(sd, 2);
+	listen(sd, 5);
 
+	/*
 	while(1) {
 		client_len = sizeof(client);
 		if((new_sd = accept(sd, (struct sockaddr*)&client, &client_len))==-1){
@@ -70,7 +72,8 @@ int main(int argc, char **argv) {
 
 		close(new_sd);
 	}
-	/*
+	*/
+	
 	while(1) {
 		printf("loop\n");
 		client_len = sizeof(client);
@@ -85,6 +88,6 @@ int main(int argc, char **argv) {
 		close(new_sd);
 	}
 	close(sd);
-	*/
+	
 	return 0;
 }
