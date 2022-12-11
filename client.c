@@ -20,7 +20,54 @@ void read_buf_and_print(int sd, char* bp, int bytes_to_read) {
 	printf("%s",temp);
 }
 
-// public IP: 221.146.135.36  WSL: 172.17.144.1
+void ipc_with_server(char* ipc) {
+	int n, bytes_to_read;
+	int sd, new_sd, port, client_len;
+	struct hostent *hp;
+	struct sockaddr_in server, client;
+
+	port = 50061;
+
+	// create TCP socket
+	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		fprintf(stderr, "Can't create a socket\n");
+		exit(1);
+	}
+	// reuse port
+	int option = 1;
+	setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+
+	// set socket address
+	bzero((char*)&server, sizeof(struct sockaddr_in));
+	server.sin_family = AF_INET;
+	server.sin_port = htons(port);
+	server.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	if(bind(sd, (struct sockaddr*)&server, sizeof(server)) == -1) {
+		fprintf(stderr, "Can't bind name to socket\n");
+		exit(1);
+	}
+
+	listen(sd, 5);
+
+	for(int i = 0; i < 5; i++){
+		client_len = sizeof(client);
+		if((new_sd = accept(sd, (struct sockaddr*)&client, &client_len)) == -1){
+			fprintf(stderr, "Can't accept cilent\n");
+			exit(1);
+		}
+		char* bp = ipc + 29 * i;	// for each socket, read 28 bytes and add ',' to ipc buffer
+		bytes_to_read = 28;
+		while((n = read(new_sd, bp, bytes_to_read)) > 0) {
+			bp += n;
+			bytes_to_read -= n;
+		}
+		close(new_sd);
+		bp[0] =',';
+	}
+	close(sd);
+}
+
 
 // recv data size
 int recv_data[14] = {10, 214, 12, 65, 12, 83, 12, 106, 12, 85, 12, 148, 13, 189};
@@ -67,6 +114,18 @@ int main(int argc, char* argv[]) {
 		int data_size = read(0, sbuf, BUFLEN);
 		write(sd, sbuf, data_size);
 	}
+	read_buf_and_print(sd, rbuf, recv_data[recv_idx++]);
+	
+	// recv data from local server(IPC)
+	char ipc_buf[145];
+	ipc_with_server(ipc_buf);
+	ipc_buf[144] = '\n';
+	
+	// send data to HIT server
+	write(sd, ipc_buf, 145);
+
+	// recv result from HIT server
+	read_buf_and_print(sd, rbuf, recv_data[recv_idx]);
 
 	close(sd);
 	

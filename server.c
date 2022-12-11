@@ -2,21 +2,50 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <netdb.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 
 #define BUFLEN 512
 
 const char ipaddr[] = "0.0.0.0";
 
+void ipc_with_client(char* buf) {
+	int sd, port;
+	struct hostent *hp;
+	struct sockaddr_in server;
+
+	port = 50061;
+
+	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		fprintf(stderr, "Can't create a socket\n");
+		exit(1);
+	}
+
+	bzero((char*)&server, sizeof(struct sockaddr_in));
+	server.sin_family = AF_INET;
+	server.sin_port=htons(port);
+	server.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+	if(connect(sd, (struct sockaddr*)&server, sizeof(server)) == -1) {
+		fprintf(stderr, "Can't connect to the server\n");
+		exit(1);
+	}
+	buf[28] = '\0';
+	printf("%s\n",buf);
+
+	write(sd, buf, 28);
+	close(sd);
+}
+
 int main(int argc, char **argv) {
 	int bytes_to_read;
 	int sd, new_sd, client_len, port;
 	struct sockaddr_in server, client;
 	char *bp, buf[BUFLEN];
-	buf[31]='\0';
 	pid_t pid;
 	
 	port = 50060;
@@ -40,7 +69,7 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	listen(sd, 2);
+	listen(sd, 3);
 	int loop = 0;
 
 	while(loop < 5) {
@@ -54,18 +83,28 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "fork() error!\n");
 			exit(1);
 		}
-		loop++;
-		
+
 		// child process
 		if(pid == 0) {
 			close(sd);
 			read(new_sd, buf, 30);
-			printf("%s",buf);
+			// send data to local client(IPC)
+			ipc_with_client(buf);
 			close(new_sd);
 			exit(0);
 		}
+		loop++;
 
+		// parent process
 		close(new_sd);
+	}
+	
+	// manage child process
+	for(int i = 0; i < 5; i++){
+		if(waitpid(-1, NULL, 0) <= 0){
+			fprintf(stderr, "wait() error!\n");
+			exit(1);
+		}
 	}
 	
 	close(sd);
