@@ -78,7 +78,8 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Can't accept client\n");
 			exit(1);
 		}
-
+		
+		// concurrent server
 		if((pid = fork()) < 0){
 			fprintf(stderr, "fork() error!\n");
 			exit(1);
