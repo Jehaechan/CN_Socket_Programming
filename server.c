@@ -10,19 +10,16 @@
 #define BUFLEN 512
 
 const char ipaddr[] = "0.0.0.0";
-//const char ipaddr[] = "127.31.117.199";
 
 int main(int argc, char **argv) {
 	int bytes_to_read;
 	int sd, new_sd, client_len, port;
 	struct sockaddr_in server, client;
 	char *bp, buf[BUFLEN];
+	buf[31]='\0';
 	pid_t pid;
 	
-	// change port num.
 	port = 50060;
-	if(argc == 2)
-		port = atoi(argv[1]);
 
 	// create TCP socket
 	if((sd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
@@ -38,17 +35,15 @@ int main(int argc, char **argv) {
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
 	server.sin_addr.s_addr = inet_addr(ipaddr);
-	//server.sin_addr.s_addr = htonl(INADDR_ANY);
-	//inet_pton(AF_INET, ipaddr, &server.sin_addr);
 	if(bind(sd, (struct sockaddr*)&server, sizeof(server)) == -1) {
 		fprintf(stderr, "Can't bind name to socket\n");
 		exit(1);
 	}
 
-	listen(sd, 5);
+	listen(sd, 2);
+	int loop = 0;
 
-	/*
-	while(1) {
+	while(loop < 5) {
 		client_len = sizeof(client);
 		if((new_sd = accept(sd, (struct sockaddr*)&client, &client_len))==-1){
 			fprintf(stderr, "Can't accept client\n");
@@ -59,34 +54,20 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "fork() error!\n");
 			exit(1);
 		}
+		loop++;
 		
 		// child process
 		if(pid == 0) {
 			close(sd);
-			memset(buf, '\0', sizeof(char)*BUFLEN);
-			read(new_sd, buf, BUFLEN);
-			printf("%s\n",buf);
+			read(new_sd, buf, 30);
+			printf("%s",buf);
 			close(new_sd);
 			exit(0);
 		}
 
 		close(new_sd);
 	}
-	*/
 	
-	while(1) {
-		printf("loop\n");
-		client_len = sizeof(client);
-		if((new_sd = accept(sd, (struct sockaddr*)&client,&client_len))==-1){
-			fprintf(stderr, "Can't accept client\n");
-			exit(1);
-		}
-		printf("loop2\n");
-		memset(buf, '\0', sizeof(char)*BUFLEN);
-		read(new_sd, buf, BUFLEN);
-		printf("%s\n",buf);
-		close(new_sd);
-	}
 	close(sd);
 	
 	return 0;
