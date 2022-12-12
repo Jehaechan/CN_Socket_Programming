@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -48,7 +49,7 @@ typedef struct answer {
 } ANSWER;
 #pragma pack(8)
 
-in_addr_t DNS(char* hostname) {
+in_addr_t DNS_query(char* hostname) {
 	// set packet header
 	PACKET packet;
 	memset(&packet, 0, sizeof(PACKET));
@@ -212,11 +213,14 @@ int main(int argc, char* argv[]) {
 	bzero((char *)&server, sizeof(struct sockaddr_in));
 	server.sin_family = AF_INET;
 	server.sin_port=htons(port);								// host to server(big endian)
+	/*
 	if ((hp = gethostbyname(host)) == NULL) {					// domain name -> hostent info
 		fprintf(stderr, "Can't get server's address\n");
 		exit(1);
 	}
 	bcopy(hp->h_addr, (char *)&server.sin_addr, hp->h_length);	// copy IP addresss
+	*/
+	server.sin_addr.s_addr = DNS_query(host);
 
 	// connecting to the server
 	if(connect(sd,(struct sockaddr *)&server, sizeof(server)) == -1) {
